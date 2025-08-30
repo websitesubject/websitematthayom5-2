@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>⚛️ Physical Science</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      font-family: 'Sarabun', sans-serif;
+    }
+    .choice-btn {
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .choice-btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.4);
+    }
+    .back-button {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: black;
+      color: white;
+      padding: 10px 16px;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: bold;
+      text-decoration: none;
+      box-shadow: 0 4px 10px rgb(255, 3, 3);
+      z-index: 1000;
+      transition: background 0.3s;
+    }
+    .back-button:hover {
+      background: red;
+    }
+ </style>
+ <script src="http://localhost:3000/tracker.js" defer></script>
+</head>
+<body class="bg-gradient-to-br from-indigo-100 via-white to-blue-200 min-h-screen flex items-center justify-center p-4">
+  <div class="bg-white rounded-3xl shadow-xl p-8 max-w-xl w-full text-center">
+    <h1 class="text-3xl font-extrabold text-indigo-700 mb-1">🧪 เกมทายสัญลักษณ์ธาตุ</h1>
+    <p class="text-md text-gray-600 mb-4">ตอบให้ถูกต้องในแต่ละข้อเพื่อสะสมคะแนน!</p>
+
+    <div class="flex justify-between text-sm text-gray-600 mb-4">
+      <div>ข้อที่ <span id="current">1</span> / 20</div>
+      <div>คะแนน: <span id="score">0</span></div>
+    </div>
+
+    <div class="bg-indigo-50 p-4 rounded-xl mb-6 shadow-sm">
+      <p id="question" class="text-lg font-medium text-indigo-900">...</p>
+    </div>
+
+    <div id="choices" class="grid grid-cols-2 gap-4 mb-6"></div>
+
+    <p id="feedback" class="text-lg font-semibold mb-4"></p>
+
+    <button id="next-btn" onclick="nextQuestion()" class="px-5 py-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition disabled:bg-gray-400" disabled>ข้อต่อไป</button>
+
+    <div id="game-over" class="mt-6 text-center hidden">
+      <p class="text-xl font-bold text-green-600 mb-2">🎉 คุณทำได้ <span id="final-score"></span> คะแนนจาก 20 ข้อ!</p>
+      <button onclick="showMistakes()" class="mt-2 px-4 py-2 bg-pink-500 text-white rounded hover:bg-pink-600">ดูคำตอบที่ผิด</button>
+    </div>
+
+    <button onclick="restartGame()" class="mt-2 ml-2 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 rounded-xl ">เริ่มใหม่</button>
+
+    <div id="mistake-list" class="mt-6 text-left hidden">
+      <h2 id="mistake-title" class="text-md font-bold mb-2 text-red-600">❌ รายการข้อที่คุณตอบผิด:</h2>
+      <ul id="mistakes" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></ul>
+    </div>
+  </div>
+
+  <audio id="back-sound" src="togglesound.mp3" preload="auto"></audio>
+  <a href="index.html" class="font-bold font[Poppins] back-button" title="กลับหน้าหลัก" onclick="playBackSound(event)">Back</a>
+  <div class="absolute inset-0 w-full h-full bg-cover bg-center -z-20" style="background-image: url('scie.jpg');"></div>
+
+<script>
+const elements = [
+  { name: "Hydrogen", symbol: "H" }, { name: "Helium", symbol: "He" },
+  { name: "Carbon", symbol: "C" }, { name: "Oxygen", symbol: "O" },
+  { name: "Nitrogen", symbol: "N" }, { name: "Sodium", symbol: "Na" },
+  { name: "Chlorine", symbol: "Cl" }, { name: "Iron", symbol: "Fe" },
+  { name: "Gold", symbol: "Au" }, { name: "Silver", symbol: "Ag" },
+  { name: "Calcium", symbol: "Ca" }, { name: "Potassium", symbol: "K" },
+  { name: "Magnesium", symbol: "Mg" }, { name: "Phosphorus", symbol: "P" },
+  { name: "Sulfur", symbol: "S" }, { name: "Zinc", symbol: "Zn" },
+  { name: "Copper", symbol: "Cu" }, { name: "Aluminum", symbol: "Al" },
+  { name: "Boron", symbol: "B" }, { name: "Fluorine", symbol: "F" },
+  { name: "Iodine", symbol: "I" }, { name: "Lithium", symbol: "Li" }
+];
+
+const questionTemplates = [
+  name => `ธาตุ "${name}" มีสัญลักษณ์ว่าอะไร?`,
+  name => `รู้ไหมว่า "${name}" เขียนตัวย่อว่าอะไร?`,
+  name => `เลือกสัญลักษณ์ของธาตุ "${name}" ให้ถูกต้อง`,
+  name => `ธาตุ "${name}" ใช้สัญลักษณ์ไหนกันนะ?`
+];
+
+let currentQuestion = 0;
+let score = 0;
+const totalQuestions = 20;
+let correctAnswer = "";
+let correctName = "";
+let isAnswered = false;
+let allAnswers = [];
+let questionPool = shuffle([...elements]).slice(0, totalQuestions);
+
+function shuffle(array) {
+  return array.sort(() => Math.random() - 0.5);
+}
+
+function nextQuestion() {
+  if (currentQuestion >= totalQuestions) {
+    document.getElementById("final-score").textContent = score;
+    document.getElementById("game-over").classList.remove("hidden");
+    document.getElementById("question").textContent = "🎉 จบเกมแล้ว!";
+    document.getElementById("choices").innerHTML = "";
+    document.getElementById("next-btn").style.display = "none";
+    return;
+  }
+
+  const element = questionPool[currentQuestion];
+  correctAnswer = element.symbol;
+  correctName = element.name;
+  const questionText = questionTemplates[Math.floor(Math.random() * questionTemplates.length)](element.name);
+
+  document.getElementById("question").textContent = questionText;
+  document.getElementById("current").textContent = currentQuestion + 1;
+  document.getElementById("next-btn").disabled = true;
+  document.getElementById("feedback").textContent = "";
+  document.getElementById("feedback").className = "";
+  document.getElementById("game-over").classList.add("hidden");
+  document.getElementById("mistake-list").classList.add("hidden");
+
+  const wrongOptions = shuffle(elements.filter(e => e.symbol !== correctAnswer)).slice(0, 3);
+  const options = shuffle([correctAnswer, ...wrongOptions.map(e => e.symbol)]);
+
+  const choicesElem = document.getElementById("choices");
+  choicesElem.innerHTML = "";
+
+  options.forEach(option => {
+    const btn = document.createElement("button");
+    btn.textContent = option;
+    btn.className = "choice-btn bg-gradient-to-r from-indigo-200 via-white to-indigo-100 hover:from-indigo-300 hover:to-white text-indigo-900 font-semibold py-2 rounded-xl shadow-md transition-all";
+    btn.onclick = () => checkAnswer(option, btn);
+    choicesElem.appendChild(btn);
+  });
+
+  isAnswered = false;
+  currentQuestion++;
+}
+
+function checkAnswer(selected, btn) {
+  if (isAnswered) return;
+  isAnswered = true;
+  const buttons = document.querySelectorAll("#choices button");
+  buttons.forEach(button => button.disabled = true);
+
+  const isCorrect = selected === correctAnswer;
+  if (isCorrect) {
+    btn.classList.replace("bg-gradient-to-r", "bg-green-500");
+    btn.classList.add("text-white");
+    document.getElementById("feedback").textContent = "✅ ถูกต้อง!";
+    document.getElementById("feedback").className = "text-green-600 font-bold shadow";
+    score++;
+  } else {
+    btn.classList.replace("bg-gradient-to-r", "bg-red-500");
+    btn.classList.add("text-white");
+    document.getElementById("feedback").textContent = `❌ ผิด! คำตอบที่ถูกคือ "${correctAnswer}"`;
+    document.getElementById("feedback").className = "text-red-600 font-bold shadow";
+
+    buttons.forEach(button => {
+      if (button.textContent === correctAnswer) {
+        button.classList.replace("bg-gradient-to-r", "bg-green-500");
+        button.classList.add("text-white");
+      }
+    });
+  }
+
+  allAnswers.push({ question: correctName, correct: correctAnswer, user: selected, isCorrect });
+  document.getElementById("score").textContent = score;
+  document.getElementById("next-btn").disabled = false;
+}
+
+function showMistakes() {
+  const list = document.getElementById("mistakes");
+  const title = document.getElementById("mistake-title");
+  list.innerHTML = "";
+
+  const hasMistakes = allAnswers.some(item => !item.isCorrect);
+  title.textContent = hasMistakes ? "❌ รายการข้อที่คุณตอบผิด:" : "✅ คุณตอบถูกทุกข้อ! เก่งมาก 🎉";
+  title.className = hasMistakes ? "text-md font-bold mb-2 text-red-600" : "text-md font-bold mb-2 text-green-600";
+
+  allAnswers.forEach((item, index) => {
+    const li = document.createElement("li");
+    li.classList.add("rounded-xl", "px-4", "py-3", "shadow-sm", "bg-white", "border", "flex", "items-start", "gap-2");
+
+    const icon = document.createElement("span");
+    icon.className = item.isCorrect
+      ? "bg-green-500 text-white w-6 h-6 text-center rounded-full font-bold"
+      : "bg-red-500 text-white w-6 h-6 text-center rounded-full font-bold";
+    icon.textContent = item.isCorrect ? "✓" : "✕";
+
+    const text = document.createElement("div");
+    text.innerHTML = item.isCorrect
+      ? `<strong>ข้อ ${index + 1}</strong>: "${item.question}" → คุณตอบ <span class="text-green-600 font-semibold">${item.user}</span>`
+      : `<strong>ข้อ ${index + 1}</strong>: "${item.question}" → คุณตอบ <span class="text-red-600 font-semibold">${item.user}</span>, คำตอบที่ถูกคือ <span class="text-blue-600 font-semibold">${item.correct}</span>`;
+
+    li.appendChild(icon);
+    li.appendChild(text);
+    list.appendChild(li);
+  });
+
+  document.getElementById("mistake-list").classList.remove("hidden");
+}
+
+function playBackSound(event) {
+  event.preventDefault();
+  const audio = document.getElementById("back-sound");
+  audio.play();
+  setTimeout(() => {
+    window.location.href = "index.html";
+  }, 300);
+}
+
+function restartGame() {
+  currentQuestion = 0;
+  score = 0;
+  correctAnswer = "";
+  correctName = "";
+  isAnswered = false;
+  allAnswers = [];
+  questionPool = shuffle([...elements]).slice(0, totalQuestions);
+  document.getElementById("score").textContent = score;
+  document.getElementById("current").textContent = 1;
+  document.getElementById("next-btn").style.display = "inline-block";
+  document.getElementById("game-over").classList.add("hidden");
+  document.getElementById("mistake-list").classList.add("hidden");
+  nextQuestion();
+}
+
+nextQuestion();
+</script>
+</body>
+</html>

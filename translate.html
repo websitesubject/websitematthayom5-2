@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <title>🌈Translate M5</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="style.css">
+  <script src="http://localhost:3000/tracker.js" defer></script>
+</head>
+
+<body class="bg-gradient-to-r from-pink-100 via-purple-100 to-blue-100 min-h-screen flex items-center justify-center p-6 font-[Prompt] relative">
+
+  <!-- 🔁 พื้นหลังรูปภาพ -->
+  <div class="absolute inset-0 w-full h-full bg-cover bg-center -z-10" style="background-image: url('translation.jpg');"></div>
+
+<audio id="back-sound" src="togglesound.mp3" preload="auto"></audio>
+<a href="index.html" class="font-bold font-[Poppins] back-button" title="กลับหน้าหลัก" onclick="">Back</a>
+
+  <audio id="bg-music" autoplay loop></audio>
+
+  <div class="bg-white/30 backdrop-blur-lg rounded-3xl shadow-[0_8px_32px_rgba(0,0,0,0.2)] p-8 max-w-xl w-full z-10 border border-white/40">
+    <div class="text-center font-[Poppins] font-bold mb-6">
+      <h1 class="text-3xl font-bold text-black-800 flex items-center justify-center gap-2">
+        🌈 Translate
+      </h1>
+    </div>
+
+    <textarea id="inputText" placeholder="พิมพ์ข้อความ..." rows="4"
+      class="w-full p-4 rounded-xl border-2 font-[Poppins] border-white/40 bg-white/70 backdrop-blur-md focus:ring-4 ring-red-500 focus:outline-none resize-none text-lg shadow-inner placeholder-gray-500 text-gray-900 mb-4"></textarea>
+
+    <div class="flex gap-4 mb-4">
+      <div class="relative flex-1">
+        <select id="sourceLang" class="appearance-none w-full p-3 pl-12 rounded-xl border bg-white text-black font-semibold">
+          <option value="th">ไทย</option>
+          <option value="eng">อังกฤษ</option>
+          <option value="zh">จีน</option>
+        </select>
+        <img src="https://flagcdn.com/w40/th.png" id="flag-source" class="w-6 h-4 absolute left-3 top-1/2 transform -translate-y-1/2" alt="flag">
+      </div>
+
+      <div class="relative flex-1">
+        <select id="targetLang" class="appearance-none w-full p-3 pl-12 rounded-xl border bg-white text-black font-semibold">
+          <option value="eng">อังกฤษ</option>
+          <option value="zh">จีน</option>
+          <option value="th">ไทย</option>
+        </select>
+        <img src="https://flagcdn.com/w40/gb.png" id="flag-target" class="w-6 h-4 absolute left-3 top-1/2 transform -translate-y-1/2" alt="flag">
+      </div>
+    </div>
+
+    <!-- ปุ่มแปลทันที -->
+    <button onclick="translateText()" class="w-full bg-red-600 hover:bg-red-700 text-white py-3 rounded-xl text-lg font-bold shadow-md transition duration-300 hover:scale-[1.02] active:scale-[0.98] mb-4">
+      🔁 แปลทันที
+    </button>
+
+    <div class="bg-white/40 backdrop-blur-md rounded-xl p-4 mb-4 shadow-inner border border-white/30">
+      <p class="text-sm  font-semibold text-gray-700">ผลลัพธ์</p>
+      <p id="outputText" class="text-xl font-bold font-[Poppins] text-gray-900 mt-2 break-words whitespace-pre-line"></p>
+    </div>
+
+    <!-- ปุ่มฟังเสียง -->
+    <button onclick="speakText()" class="w-full bg-red-600 hover:bg-red-700 text-white py-3 rounded-xl text-lg font-bold shadow-md transition duration-300 hover:scale-[1.02] active:scale-[0.98]">
+      🔊 ฟังเสียง
+    </button>
+  </div>
+
+  <script>
+    const flagMap = {
+      th: 'https://flagcdn.com/w40/th.png',
+      eng: 'https://flagcdn.com/w40/gb.png',
+      zh: 'https://flagcdn.com/w40/cn.png'
+    };
+
+    document.getElementById('sourceLang').addEventListener('change', (e) => {
+      document.getElementById('flag-source').src = flagMap[e.target.value];
+    });
+
+    document.getElementById('targetLang').addEventListener('change', (e) => {
+      document.getElementById('flag-target').src = flagMap[e.target.value];
+    });
+   function playBackSound(event) {
+    event.preventDefault(); // กันการเปลี่ยนหน้าทันที
+    const audio = document.getElementById("back-sound");
+    audio.play();
+
+    // เปลี่ยนหน้า หลังจากเสียงเล่น (เช่น รอ 300ms)
+    setTimeout(() => {
+      window.location.href = "index.html";
+    }, 300);
+  }
+  function playBackSound(event) {
+    // Play sound logic
+    window.location.href = 'index.html'; // This will navigate to index.html
+}
+
+  </script>
+
+  <script src="m5.js"></script>
+</body>
+</html>
